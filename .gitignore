@@ -1,0 +1,5 @@
+master/*
+pinned/*
+.*.swp
+output.txt
+report.txt
