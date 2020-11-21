@@ -16,29 +16,32 @@ sub init_from_meta
 
 	my $obj = MeCache::Meta->new (
 		type => $meta->{'type'},
-		filename => $meta->{'filename'},
+		id => $meta->{'filename'},
 		created => $meta->{'created'},
 		other => $meta->{'other'},
 		dt => $meta->{'dt'},
+		where => $meta->{'where'},
+		content => $meta->{'other'},
+		content_is_base64 => 0,
 	);
 
 	return $obj;
 }
 
-has filename => (
-	is => 'ro'
-);
-
+has id => ( is => 'ro');
 has type => ( is => 'ro', default => 'UNKNOWN' );
 has created => ( is => 'ro' );
 has other => ( is => 'ro', default => '');
 has dt => ( is => 'ro' );
+has where => ( is => 'ro' );
+has content => ( is => 'ro' );
+has content_is_base64 => ( is => 'ro' );
 
 sub debug
 {
 	my ($self) = @_;
 
-	my $debug = $self->type . ":" . "CREATED (" . $self->created . ")" . " File (" . $self->filename . ")";
+	my $debug = $self->type . ":" . "CREATED (" . $self->created . ")" . " File (" . $self->id . ")";
 
 	return $debug;
 }
@@ -64,7 +67,7 @@ sub summary_heading
 	return $heading;
 }
 
-sub clone_essentials
+sub get_base_data
 {
 	my ($self) = @_;
 
@@ -74,6 +77,29 @@ sub clone_essentials
 	};
 
 	return $clone;
+}
+
+sub get_list_data
+{
+	my ($self) = @_;
+
+	my $clone = $self->get_base_data ();
+	$clone->{'id'} = $self->id;
+	$clone->{'where'} = $self->where;
+
+	return $clone;
+}
+
+sub get_list_formatted
+{
+	my ($self) = @_;
+
+	my $output = [];
+
+	push (@{$output}, "Meta: ID " . $self->id);
+	push (@{$output}, "   Other: " . $self->other);
+
+	return $output;
 }
 
 1;

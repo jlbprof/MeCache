@@ -9,6 +9,8 @@ extends 'MeCache::Meta';
 
 has description => ( 'is' => 'ro' );
 has url => ( 'is' => 'ro' );
+has content => ( 'is' => 'ro' );
+has content_is_base64 => ( is => 'ro' );
 
 sub init_from_meta
 {
@@ -19,11 +21,14 @@ sub init_from_meta
 
 	my $obj = MeCache::Bookmark->new (
 		type => "Bookmark",
-		filename => $meta->{'filename'},
+		id => $meta->{'filename'},
 		created => $meta->{'created'},
 		description => $meta->{'description'},
 		url => $meta-> {'url'},
 		dt => $meta->{'dt'},
+		where => $meta->{'where'},
+		content => $meta->{'url'},
+		content_is_base64 => 0,
 	);
 
 	return $obj;
@@ -48,7 +53,7 @@ sub summary
 	return $summary;
 }
 
-sub clone_essentials
+sub get_base_data
 {
 	my ($self) = @_;
 
@@ -59,6 +64,19 @@ sub clone_essentials
 	};
 
 	return $clone;
+}
+
+sub get_list_formatted
+{
+	my ($self) = @_;
+
+	my $output = [];
+
+	push (@{$output}, "Bookmark: ID " . $self->id);
+	push (@{$output}, "   Description: " . $self->description);
+	push (@{$output}, "   Url:         " . $self->url);
+
+	return $output;
 }
 
 1;

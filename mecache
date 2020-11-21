@@ -1,0 +1,303 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use Carp;
+use Getopt::Long;
+use Data::Dumper;
+use Cpanel::JSON::XS;
+use File::Copy;
+use MIME::Base64;
+
+use MeCache::Init;
+
+$| = 1;
+
+$SIG{__WARN__} = sub {
+	my ($sig) = @_;
+
+	print "WARN :$sig:\n";
+
+	print Carp->longmess . "\n";
+
+	exit 0;
+};
+
+$SIG{__DIE__} = sub {
+	my ($sig) = @_;
+
+	print "DIE :$sig:\n";
+	print Carp->longmess . "\n";
+
+	exit 0;
+};
+
+$SIG{TERM} = sub {
+	my ($sig) = @_;
+
+	exit 0;
+};
+
+$SIG{INT} = sub {
+	my ($sig) = @_;
+
+	exit 0;
+};
+
+sub usage
+{
+	my ($msg) = @_;
+
+	print "Error: $msg\n";
+	print "usage: \n";
+	print "    mecache help\n";
+	print "    mecache --help\n";
+	print "    mecache list [master|pinned] [--json]\n";
+	print "    mecache move --id=ID --to=pinned --from=master\n";
+	print "    mecache delete --id=ID --from=master\n";
+	print "    mecache get [--content] [--base64] --id=ID --from=master\n";
+	print "    mecache put --to master Message message\n";
+	print "    mecache put --to master Bookmark url description\n";
+	print "    mecache put --to master File path\n";
+
+	exit 0;
+}
+
+our %valid_add_types = (
+	Bookmark => 1,
+	Message => 1,
+	File => 1,
+);
+
+sub script
+{
+	my (@args) = @_;
+
+	# standard options
+	my $json;
+	my $help;
+
+	# move,get options
+	my $id;
+	my $to;
+	my $from;
+
+	# get options
+	my $content;
+	my $base64;
+
+	my $ret = Getopt::Long::GetOptionsFromArray (\@args,
+		"json" => \$json,
+		"help" => \$help,
+		"id=s" => \$id,
+		"to=s" => \$to,
+		"from=s" => \$from,
+		"content" => \$content,
+		"base64" => \$base64,
+		);
+
+	usage ("Help") if $help;
+	usage ("No action provided") if !@args;
+
+	my $coder;
+	$coder = Cpanel::JSON::XS->new->ascii->pretty->allow_nonref () if ($json);
+
+	my $action = shift @args;
+	if ($action eq "help")
+	{
+		usage ("Help");
+	}
+	elsif ($action eq "list")
+	{
+		my $where = "master";
+		$where = shift @args if @args;
+		usage ("List from either master OR pinned") if ($where ne "master" && $where ne "pinned");
+		my $dir = MeCache::Init::init_from_dir ($where, $where);
+
+		if ($json)
+		{
+			print $coder->encode ($dir->list ()) . "\n";
+		}
+		else
+		{
+			my $first = 1;
+			foreach my $meta (@{$dir->metas})
+			{
+				print "\n" if (!$first);
+				my $output = $meta->get_list_formatted ();
+
+				foreach my $line (@{$output})
+				{
+					print $line . "\n";
+				}
+
+				$first = 0;
+			}
+		}
+	}
+	elsif ($action eq "move")
+	{
+		usage ("ID not provided") if !$id;
+		usage ("to not provided") if !$to;
+		usage ("from not provided") if !$from;
+
+		usage ("to must be master or pinned") if ($to ne "master" && $to ne "pinned");
+		usage ("from must be master or pinned") if ($from ne "master" && $from ne "pinned");
+
+		my $found;
+		my $dir = MeCache::Init::init_from_dir ($from, $from);
+		my $meta = $dir->get_from_id ($id);
+		die "Cannot find file to move" if !$meta;
+
+		File::Copy::move ("$from/$id", "$to/$id") or die "Error in moving $_";
+	}
+	elsif ($action eq "delete")
+	{
+		usage ("ID not provided") if !$id;
+		usage ("from not provided") if !$from;
+		usage ("from must be master or pinned") if ($from ne "master" && $from ne "pinned");
+
+		my $found;
+		my $dir = MeCache::Init::init_from_dir ($from, $from);
+		my $meta = $dir->get_from_id ($id);
+		die "Cannot find file to delete" if !$meta;
+
+		unlink ("$from/$id") or die "Error in deleting $_";
+	}
+	elsif ($action eq "get")
+	{
+		usage ("ID not provided") if !$id;
+		usage ("from not provided") if !$from;
+		usage ("from must be master or pinned") if ($from ne "master" && $from ne "pinned");
+
+		my $found;
+		my $dir = MeCache::Init::init_from_dir ($from, $from);
+		my $meta = $dir->get_from_id ($id);
+		die "Cannot find file to get" if !$meta;
+
+		my $content_is_base64 = $meta->content_is_base64;
+
+		if (!$content)
+		{
+			my $output = $meta->get_list_formatted ();
+
+			foreach my $line (@{$output})
+			{
+				print $line . "\n";
+			}
+		}
+		else
+		{
+			my $content = $meta->content;
+
+			if ($base64)
+			{
+				if ($content_is_base64)
+				{
+					print $content;
+				}
+				else
+				{
+					print MIME::Base64::encode_base64 ($content);
+				}
+			}
+			else
+			{
+				if ($content_is_base64)
+				{
+					print MIME::Base64::decode_base64 ($content);
+				}
+				else
+				{
+					print $content;
+				}
+			}
+		}
+	}
+	elsif ($action eq "put")
+	{
+		my $type = shift @args;
+
+		die "Invalid type ($type)" if !exists $valid_add_types{$type};
+		die "Need master or pinned" if !$to && $to ne "master" && $to ne "pinned";
+
+		my $base_data = {};
+
+		if ($type eq "Bookmark")
+		{
+			my $url = shift @args;
+			my $description = shift @args;
+
+			$base_data = {
+				type  => "Bookmark",
+				description => $description,
+				url => $url,
+			};
+		}
+		elsif ($type eq "Message")
+		{
+			my $message = shift @args;
+
+			$base_data = {
+				type  => "Message",
+				message => $message,
+			};
+		}
+		elsif ($type eq "File")
+		{
+			my $filename = shift @args;
+
+			my $path = Path::Tiny::path ($filename);
+			my $content = $path->slurp ();
+
+			my $encoded = MIME::Base64::encode_base64 ($content);
+
+			$base_data = {
+				type => 'File',
+				name => $path->basename,
+				content => $encoded,
+				size => length ($content)
+			};
+		}
+		else
+		{
+			die "Should never happen, bad programmer";
+		}
+
+		# we must be in the directory that the file resides in
+		# File must be of the form 12345.meta
+
+		# file names must be of the form:  999999999-99999-99999.meta
+		# The first group of 9's are the unix timestamp at creation
+		# The second group of 9's is the process id
+		# The third group of 9's is a random number
+		# The second and third group allow for asynchronous file creations, with
+		# almost no chance of simultaneous creation
+		#
+
+		my $filename = $to . "/" . time () . "_" . $$ . "_" . int(rand(999_999_999)) . ".meta";
+
+		my $coder = Cpanel::JSON::XS->new->ascii->pretty->allow_nonref ();
+		my $json_text = $coder->encode ($base_data);
+
+		if (open my $fh, '>', $filename)
+		{
+			print $fh $json_text;
+			close $fh;
+		}
+		else
+		{
+			die "Could not open $filename";
+		}
+	}
+	else
+	{
+		usage ("Unknown action ($action)");
+	}
+
+	return 1;
+}
+
+script (@ARGV) unless caller ();
+

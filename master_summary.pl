@@ -55,7 +55,7 @@ sub script
 {
 	my (@args) = @_;
 
-	my $dir = MeCache::Init::init_from_dir ('master');
+	my $dir = MeCache::Init::init_from_dir ('master', 'master');
 	my $heading = $dir->summary_heading ();
 	return if !$heading;
 

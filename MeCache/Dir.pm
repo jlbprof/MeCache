@@ -28,6 +28,36 @@ sub summary_heading
 	return $meta->summary_heading;
 }
 
+sub list
+{
+	my ($self) = @_;
+
+	my $metas = $self->metas;
+	my $output = [];
+
+	foreach my $meta (@{$metas})
+	{
+		push (@{$output}, $meta->get_list_data ());
+	}
+
+	return $output;
+}
+
+sub get_from_id
+{
+	my ($self, $id) = @_;
+
+	my $found;
+	foreach my $meta (@{$self->metas})
+	{
+		next if ($id ne $meta->id);
+		$found = $meta;
+		last;
+	}
+
+	return $found;
+}
+
 1;
 
 __END__

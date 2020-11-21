@@ -1,5 +1,6 @@
 master/*
 pinned/*
+save/*
 .*.swp
 output.txt
 report.txt

@@ -18,9 +18,9 @@ use Try::Tiny;
 
 sub init_from_file
 {
-	my ($filename, $pinned) = @_;
+	my ($filename, $where) = @_;
 
-	$pinned ||= 0;
+	$where ||= 'master';
 
 	die "Must pass in an actual file" if (!-f $filename);
 
@@ -54,9 +54,9 @@ sub init_from_file
 
 	die "Type not specified" if (!exists $meta->{'type'});
 
-	$meta->{'filename'} = $filename;
+	$meta->{'filename'} = $basename;
 	$meta->{'created'} = $created;
-	$meta->{'pinned'} = $pinned;
+	$meta->{'where'} = $where;
 
 	# TBD: a general way of initializing
 	if ($meta->{'type'} eq "Meta")
@@ -84,9 +84,9 @@ sub init_from_file
 
 sub init_from_dir
 {
-	my ($dir, $pinned) = @_;
+	my ($dir, $where) = @_;
 
-	$pinned ||= 0;
+	$where ||= "master";
 
 	my $pdir = Path::Tiny::path ($dir);
 	die "Must be a directory" if $pdir->is_file;
@@ -101,7 +101,7 @@ sub init_from_dir
 		my $meta;
 
 		try {
-			$meta = init_from_file ($child, $pinned);
+			$meta = init_from_file ($child, $where);
 		};
 
 		next if !$meta;

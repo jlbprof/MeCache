@@ -10,6 +10,7 @@ extends 'MeCache::Meta';
 has name => ( 'is' => 'ro' );
 has size => ( 'is' => 'ro' );
 has content => ( 'is' => 'ro' );
+has content_is_base64 => ( is => 'ro' );
 
 sub init_from_meta
 {
@@ -21,12 +22,14 @@ sub init_from_meta
 
 	my $obj = MeCache::File->new (
 		type => "File",
-		filename => $meta->{'filename'},
+		id => $meta->{'filename'},
 		created => $meta->{'created'},
 		name => $meta->{'name'},
 		content => $meta-> {'content'},
 		size => $meta-> {'size'},
 		dt => $meta->{'dt'},
+		where => $meta->{'where'},
+		content_is_base64 => 1
 	);
 
 	return $obj;
@@ -51,7 +54,7 @@ sub summary
 	return $summary;
 }
 
-sub clone_essentials
+sub get_base_data
 {
 	my ($self) = @_;
 
@@ -63,6 +66,19 @@ sub clone_essentials
 	};
 
 	return $clone;
+}
+
+sub get_list_formatted
+{
+	my ($self) = @_;
+
+	my $output = [];
+
+	push (@{$output}, "File: ID " . $self->id);
+	push (@{$output}, "   Filename: " . $self->name);
+	push (@{$output}, "   Size:     " . $self->size);
+
+	return $output;
 }
 
 1;
