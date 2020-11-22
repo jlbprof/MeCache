@@ -71,7 +71,30 @@ find.
 I fully intend on expanding these classes.   All of these classes extend a
 Meta class.
 
-All of these objects are fully contained in a single json formatted file
-called .meta.
+Each object is a self contained json file, with the file extension of .meta.
+
+The format of the file name is critical.   I intend it to be reasonable named,
+to make a collision of file name to be unlikely.
+
+	# we must be in the directory that the file resides in
+	# File must be of the form 12345.meta
+
+    # Example file names
+
+    # 1603333177_53858_987768.meta
+    # 1603492143_55555_66666.meta
+    # 1603492166_55557_66668.meta
+    # 1603492177_55558_66668.meta
+    # 1603494177_66558_16668.meta
+    # 1606003007_1697_880286548.meta
+    # 1606003046_1699_239573126.meta
+    # 1606003107_1707_581543134.meta
+
+	# file names must be of the form:  999999999-99999-99999.meta
+	# The first group of digits's are the unix timestamp at creation
+	# The second group of digits's is the process id
+	# The third group of digits's is a random number
+	# The second and third group allow for asynchronous file creations, with
+	# almost no chance of simultaneous creation
 
 Still working on this document.
