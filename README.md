@@ -22,13 +22,13 @@ and using WSL on Windows or Strawberry Perl.
 ## What I have now
 
 What I have now is a set of Moo classes and a client script.   Currently it
-only stores the data locally, in 2 locations "master" which should really be
-renamed "ephemeral" where whatever is stored there will be removed
-automatically after a configured period of time.   Or in "pinned" where the
-objects remain indefinitely.
-
-In the long run I want to allow heirachial organization of the "pinned"
-objects so that they will be easier to find.
+only stores the data locally. I intend to make this a Dancer2 app central hub
+that all my computers would use.  The concept is there are 2 folders "master",
+which should really be renamed "ephemeral" where whatever is stored there will
+be removed automatically after a configured period of time.   Or in "pinned"
+where the objects remain indefinitely.  In the long run I want to allow
+heirachial organization of the "pinned" objects so that they will be easier to
+find.
 
     julian@DESKTOP-FC2E2Q8:~/mecache$ tree .
     .
@@ -62,3 +62,16 @@ objects so that they will be easier to find.
 
     4 directories, 23 files
 
+## Current Object types
+
+* Bookmark, consisting of a Description and a URL
+* Message, consisting of a message
+* File, consisting of a file name, size and the file's contents.
+
+I fully intend on expanding these classes.   All of these classes extend a
+Meta class.
+
+All of these objects are fully contained in a single json formatted file
+called .meta.
+
+Still working on this document.
