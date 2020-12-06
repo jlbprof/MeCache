@@ -60,6 +60,8 @@ sub usage
 	print "    mecache put --to master Message message\n";
 	print "    mecache put --to master Bookmark url description\n";
 	print "    mecache put --to master File path\n";
+	print "    mecache put --to master CodeSnippet langauage description file_with_snippet\n";
+	print "    mecache put --to master Text file_with_text\n";
 
 	exit 0;
 }
@@ -68,6 +70,7 @@ our %valid_add_types = (
 	Bookmark => 1,
 	Message => 1,
 	File => 1,
+	CodeSnippet => 1,
 );
 
 sub script
@@ -219,7 +222,6 @@ sub script
 	{
 		my $type = shift @args;
 
-		die "Invalid type ($type)" if !exists $valid_add_types{$type};
 		die "Need master or pinned" if !$to && $to ne "master" && $to ne "pinned";
 
 		my $base_data = {};
@@ -248,6 +250,8 @@ sub script
 		{
 			my $filename = shift @args;
 
+            die "Cannot open file :$filename:" if !-e $filename;
+
 			my $path = Path::Tiny::path ($filename);
 			my $content = $path->slurp ();
 
@@ -260,9 +264,45 @@ sub script
 				size => length ($content)
 			};
 		}
+		elsif ($type eq "CodeSnippet")
+		{
+			my $language = shift @args;
+			my $description = shift @args;
+            my $file_with_snippet = shift @args;
+
+            die "Cannot open file :$file_with_snippet:" if !-e $file_with_snippet;
+
+			my $path = Path::Tiny::path ($file_with_snippet);
+			my $content = $path->slurp ();
+
+			my $encoded = MIME::Base64::encode_base64 ($content);
+
+			$base_data = {
+				type  => "CodeSnippet",
+				language => $language,
+				description => $description,
+				content => $encoded,
+			};
+		}
+		elsif ($type eq "Text")
+		{
+            my $file_with_text = shift @args;
+
+            die "Cannot open file :$file_with_text" if !-e $file_with_text;
+
+			my $path = Path::Tiny::path ($file_with_text);
+			my $content = $path->slurp ();
+
+			my $encoded = MIME::Base64::encode_base64 ($content);
+
+			$base_data = {
+				type  => "Text",
+				content => $encoded,
+			};
+		}
 		else
 		{
-			die "Should never happen, bad programmer";
+			die "mecache: Invalid Type :$type:";
 		}
 
 		# we must be in the directory that the file resides in

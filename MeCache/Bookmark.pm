@@ -73,6 +73,7 @@ sub get_list_formatted
 	my $output = [];
 
 	push (@{$output}, "Bookmark: ID " . $self->id);
+	push (@{$output}, "   Date:        " . $self->ymd);
 	push (@{$output}, "   Description: " . $self->description);
 	push (@{$output}, "   Url:         " . $self->url);
 

@@ -61,6 +61,7 @@ sub get_list_formatted
 	my $output = [];
 
 	push (@{$output}, "Message: ID " . $self->id);
+	push (@{$output}, "   Date:    " . $self->ymd);
 	push (@{$output}, "   Message: " . $self->message);
 
 	return $output;

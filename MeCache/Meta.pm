@@ -97,9 +97,17 @@ sub get_list_formatted
 	my $output = [];
 
 	push (@{$output}, "Meta: ID " . $self->id);
+	push (@{$output}, "   Date:  " . $self->ymd);
 	push (@{$output}, "   Other: " . $self->other);
 
 	return $output;
+}
+
+sub ymd
+{
+    my ($self) = @_;
+
+    return $self->dt->ymd ();
 }
 
 1;

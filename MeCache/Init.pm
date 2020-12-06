@@ -6,13 +6,15 @@ use warnings;
 use Path::Tiny;
 use File::chdir;
 use Cpanel::JSON::XS;
-
 use Data::Dumper;
+
 use MeCache::Meta;
 use MeCache::Message;
 use MeCache::Dir;
 use MeCache::Bookmark;
 use MeCache::File;
+use MeCache::CodeSnippet;
+use MeCache::Text;
 
 use Try::Tiny;
 
@@ -75,6 +77,16 @@ sub init_from_file
 	elsif ($meta->{'type'} eq "File")
 	{
 		my $xmeta = MeCache::File::init_from_meta ($meta);
+		return $xmeta;
+	}
+	elsif ($meta->{'type'} eq "CodeSnippet")
+	{
+		my $xmeta = MeCache::CodeSnippet::init_from_meta ($meta);
+		return $xmeta;
+	}
+	elsif ($meta->{'type'} eq "Text")
+	{
+		my $xmeta = MeCache::Text::init_from_meta ($meta);
 		return $xmeta;
 	}
 

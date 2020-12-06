@@ -1,14 +1,16 @@
-package MeCache::File;
+package MeCache::Text;
 
 use strict;
 use warnings;
 
 use Moo;
+use MIME::Base64;
 
 extends 'MeCache::Meta';
 
-has name => ( 'is' => 'ro' );
 has size => ( 'is' => 'ro' );
+has language => ( 'is' => 'ro' );
+has description => ( 'is' => 'ro' );
 has content => ( 'is' => 'ro' );
 has content_is_base64 => ( is => 'ro' );
 
@@ -16,12 +18,10 @@ sub init_from_meta
 {
 	my ($meta) = @_;
 
-	die "Name missing" if (!exists $meta->{'name'});
-	die "Size missing" if (!exists $meta->{'size'});
 	die "Content missing" if (!exists $meta->{'content'});
 
-	my $obj = MeCache::File->new (
-		type => "File",
+	my $obj = MeCache::Text->new (
+		type => "Text",
 		id => $meta->{'filename'},
 		created => $meta->{'created'},
 		name => $meta->{'name'},
@@ -40,16 +40,25 @@ sub debug
 	my ($self) = @_;
 
 	my $debug = $self->SUPER::debug ($self);
-	$debug .= " File (" . $self->name . ")";
+	$debug .= " Text";
 
 	return $debug;
+}
+
+sub first_line
+{
+	my ($self) = @_;
+
+	my @lines = split ("\n", MIME::Base64::decode_base64 ($self->content));
+
+    return $lines [0];
 }
 
 sub summary
 {
 	my ($self) = @_;
 
-	my $summary = sprintf ("%-8.8s %10.10s %-68.68s", $self->type, $self->dt ()->ymd, $self->name);
+	my $summary = sprintf ("%-8.8s %10.10s %-60.60s", $self->type, $self->dt ()->ymd, $self->first_line);
 
 	return $summary;
 }
@@ -60,8 +69,6 @@ sub get_base_data
 
 	my $clone = {
 		type  => $self->type,
-		name => $self->name,
-		size => $self->size,
 		content => $self->content,
 	};
 
@@ -74,10 +81,9 @@ sub get_list_formatted
 
 	my $output = [];
 
-	push (@{$output}, "File: ID " . $self->id);
-	push (@{$output}, "   Date:     " . $self->ymd);
-	push (@{$output}, "   Filename: " . $self->name);
-	push (@{$output}, "   Size:     " . $self->size);
+	push (@{$output}, "Text: ID " . $self->id);
+	push (@{$output}, "   Date:       " . $self->ymd);
+	push (@{$output}, "   First Line: " . $self->first_line);
 
 	return $output;
 }
